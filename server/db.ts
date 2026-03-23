@@ -22,6 +22,7 @@ export interface PriceVariation {
 export interface VariationStats {
   variation_id: number;
   variation_name: string;
+  page_mode: string;
   views: number;
   clicks: number;
   ctr: number;
@@ -232,6 +233,7 @@ export async function getVariationStats(): Promise<VariationStats[]> {
     SELECT
       pv.id AS variation_id,
       pv.name AS variation_name,
+      pv.page_mode,
       COALESCE(SUM(CASE WHEN ve.event_type = 'view' THEN 1 ELSE 0 END), 0)::integer AS views,
       COALESCE(SUM(CASE WHEN ve.event_type = 'click' THEN 1 ELSE 0 END), 0)::integer AS clicks,
       CASE
@@ -244,7 +246,7 @@ export async function getVariationStats(): Promise<VariationStats[]> {
       END AS ctr
     FROM price_variations pv
     LEFT JOIN variation_events ve ON ve.variation_id = pv.id
-    GROUP BY pv.id, pv.name
+    GROUP BY pv.id, pv.name, pv.page_mode
     ORDER BY pv.created_at ASC
   `);
   return result.rows;

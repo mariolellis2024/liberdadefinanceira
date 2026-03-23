@@ -15,12 +15,13 @@ interface Variation {
 interface VariationStat {
   variation_id: number;
   variation_name: string;
+  page_mode: string;
   views: number;
   clicks: number;
   ctr: number;
 }
 
-type Tab = 'dashboard' | 'config';
+type Tab = 'dashboard' | 'config' | 'preview';
 
 export default function Admin() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -280,6 +281,10 @@ export default function Admin() {
                 onClick={() => setActiveTab('config')}>
                 ⚙️ Configurações
               </button>
+              <button className={`tab-btn ${activeTab === 'preview' ? 'active' : ''}`}
+                onClick={() => setActiveTab('preview')}>
+                👁️ Testar Página
+              </button>
             </nav>
             <button className="btn-admin-logout" onClick={handleLogout}>Sair</button>
           </div>
@@ -319,46 +324,80 @@ export default function Admin() {
               {stats.length === 0 ? (
                 <p className="card-description">Nenhuma variação criada ainda. Vá em Configurações para criar.</p>
               ) : (
-                <div className="stats-table-wrapper">
-                  <table className="stats-table">
-                    <thead>
-                      <tr>
-                        <th>Variação</th>
-                        <th>Exibições</th>
-                        <th>Cliques</th>
-                        <th>CTR</th>
-                        <th>Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {stats.map((s) => {
-                        const variation = variations.find(v => v.id === s.variation_id);
-                        return (
-                          <tr key={s.variation_id}>
-                            <td>
-                              <strong>{s.variation_name}</strong>
-                              {variation && (
-                                <span className="stat-price-hint">{variation.price_avista}</span>
-                              )}
-                            </td>
-                            <td>{s.views}</td>
-                            <td>{s.clicks}</td>
-                            <td>
-                              <span className={`ctr-badge ${Number(s.ctr) > 5 ? 'ctr-good' : Number(s.ctr) > 2 ? 'ctr-ok' : 'ctr-low'}`}>
-                                {s.ctr}%
-                              </span>
-                            </td>
-                            <td>
-                              <span className={`status-dot ${variation?.active ? 'active' : 'inactive'}`}>
-                                {variation?.active ? 'Ativa' : 'Inativa'}
-                              </span>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                <>
+                  <div className="stats-table-wrapper">
+                    <table className="stats-table">
+                      <thead>
+                        <tr>
+                          <th>Variação</th>
+                          <th>Modo</th>
+                          <th>Exibições</th>
+                          <th>Cliques</th>
+                          <th>CTR</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {stats.map((s) => {
+                          const variation = variations.find(v => v.id === s.variation_id);
+                          return (
+                            <tr key={s.variation_id}>
+                              <td>
+                                <strong>{s.variation_name}</strong>
+                                {variation && (
+                                  <span className="stat-price-hint">{variation.price_avista}</span>
+                                )}
+                              </td>
+                              <td>
+                                <span className={`var-page-mode ${s.page_mode === 'hidden' ? 'mode-hidden' : 'mode-open'}`}>
+                                  {s.page_mode === 'hidden' ? '📺 Fechada' : '📄 Aberta'}
+                                </span>
+                              </td>
+                              <td>{s.views}</td>
+                              <td>{s.clicks}</td>
+                              <td>
+                                <span className={`ctr-badge ${Number(s.ctr) > 5 ? 'ctr-good' : Number(s.ctr) > 2 ? 'ctr-ok' : 'ctr-low'}`}>
+                                  {s.ctr}%
+                                </span>
+                              </td>
+                              <td>
+                                <span className={`status-dot ${variation?.active ? 'active' : 'inactive'}`}>
+                                  {variation?.active ? 'Ativa' : 'Inativa'}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Insights */}
+                  {(() => {
+                    const qualified = stats.filter(s => Number(s.views) >= 50);
+                    if (qualified.length < 2) {
+                      const minViews = Math.min(...stats.map(s => Number(s.views)));
+                      const remaining = Math.max(0, 50 - minViews);
+                      return (
+                        <div className="insight-box insight-waiting">
+                          <strong>⏳ Coletando dados...</strong>
+                          <p>Cada variação precisa de pelo menos 50 exibições para gerar insights confiáveis. Faltam aproximadamente <strong>{remaining}</strong> exibições para a análise.</p>
+                        </div>
+                      );
+                    }
+                    const best = [...qualified].sort((a, b) => Number(b.ctr) - Number(a.ctr))[0];
+                    const bestVariation = variations.find(v => v.id === best.variation_id);
+                    const modeLabel = best.page_mode === 'hidden' ? 'Página Fechada (📺 só vídeo)' : 'Página Aberta (📄)';
+                    return (
+                      <div className="insight-box insight-result">
+                        <strong>🏆 Melhor Performance</strong>
+                        <p>
+                          A variação <strong>"{best.variation_name}"</strong> com <strong>{bestVariation?.price_avista}</strong> e modo <strong>{modeLabel}</strong> tem o maior CTR: <strong>{best.ctr}%</strong> ({best.clicks} cliques em {best.views} exibições).
+                        </p>
+                      </div>
+                    );
+                  })()}
+                </>
               )}
             </div>
           </>
@@ -550,6 +589,50 @@ export default function Admin() {
                   </button>
                 </div>
               </form>
+            </div>
+          </>
+        )}
+
+        {activeTab === 'preview' && (
+          <>
+            <div className="admin-card">
+              <h2>👁️ Testar Modo da Página</h2>
+              <p className="card-description">
+                Use os botões abaixo para visualizar como a página fica em cada modo. Isso não afeta os visitantes reais.
+              </p>
+              <div style={{ display: 'flex', gap: '16px', marginTop: '20px', flexWrap: 'wrap' }}>
+                <a
+                  href="/?preview_mode=open"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-admin-preview btn-preview-open"
+                >
+                  📄 Testar Página Aberta
+                </a>
+                <a
+                  href="/?preview_mode=hidden"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-admin-preview btn-preview-hidden"
+                >
+                  📺 Testar Página Fechada (só vídeo)
+                </a>
+              </div>
+            </div>
+
+            <div className="admin-card">
+              <h2>📝 Como configurar na VTURB</h2>
+              <div className="card-description" style={{ lineHeight: '2' }}>
+                <strong>1.</strong> No painel da VTURB, crie um botão → <strong>Custom HTML</strong><br />
+                <strong>2.</strong> Ative <strong>"Show hidden content"</strong><br />
+                <strong>3.</strong> Selecione: <strong>ID</strong><br />
+                <strong>4.</strong> Nome do ID: <code>lf-reveal</code><br />
+                <strong>5.</strong> Defina o tempo de início (ex: <code>03:00</code>)<br />
+                <strong>6.</strong> Marque ✅ "Set as pitch moment"<br />
+                <strong>7.</strong> Marque ✅ "Show after video ends"<br />
+                <strong>8.</strong> Marque ✅ "Keep displaying on future visits"<br />
+                <strong>9.</strong> No campo HTML code, coloque: <code>&lt;div style="display:none"&gt;&lt;/div&gt;</code>
+              </div>
             </div>
           </>
         )}

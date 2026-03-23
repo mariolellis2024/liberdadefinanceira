@@ -16,7 +16,13 @@ import { VariationProvider, useVariation } from './hooks/useVariation';
 
 function LandingPageContent() {
   const { variation } = useVariation();
-  const isHidden = variation?.page_mode === 'hidden';
+
+  // Allow admins to preview a specific mode via ?preview_mode=open|hidden
+  const previewMode = new URLSearchParams(window.location.search).get('preview_mode');
+  const effectiveMode = previewMode === 'open' || previewMode === 'hidden'
+    ? previewMode
+    : variation?.page_mode || 'open';
+  const isHidden = effectiveMode === 'hidden';
 
   useEffect(() => {
     const observer = new IntersectionObserver(
