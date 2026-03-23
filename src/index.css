@@ -583,6 +583,34 @@ img {
     color: #8a9ab5;
     font-size: 0.8rem;
     margin-left: auto;
+    transition: transform 0.3s;
+}
+
+.lesson-chevron-open {
+    transform: rotate(180deg);
+}
+
+.lesson-card-open {
+    border-color: rgba(212, 168, 84, 0.4);
+}
+
+.lesson-content {
+    flex: 1;
+    text-align: left;
+}
+
+.lesson-content span {
+    font-size: 0.95rem;
+    color: #e0e0e0;
+    font-weight: 500;
+}
+
+.lesson-description {
+    font-size: 0.88rem;
+    color: #a0aec0;
+    margin-top: 8px;
+    line-height: 1.5;
+    font-weight: 400;
 }
 
 /* Material cards */

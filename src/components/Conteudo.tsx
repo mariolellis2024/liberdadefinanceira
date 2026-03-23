@@ -1,12 +1,28 @@
+import { useState } from 'react';
 import CtaButton from './CtaButton';
 import SecurityBadge from './SecurityBadge';
 
 const aulas = [
-  'Boas-vindas',
-  'Orçamento Pessoal',
-  'Crenças em relação ao dinheiro',
-  'Ferida Econômica',
-  'Tríade do Dinheiro',
+  {
+    titulo: 'Boas-vindas',
+    descricao: 'Como aplicar o curso na sequência correta para gerar resultado.',
+  },
+  {
+    titulo: 'Orçamento Pessoal',
+    descricao: 'Como registrar entradas e saídas, visualizar e planejar o fluxo do seu dinheiro.',
+  },
+  {
+    titulo: 'Crenças em relação ao dinheiro',
+    descricao: 'Como identificar padrões que influenciam suas decisões financeiras.',
+  },
+  {
+    titulo: 'Ferida Econômica',
+    descricao: 'Como reconhecer a raiz emocional dos seus comportamentos financeiros.',
+  },
+  {
+    titulo: 'Tríade do Dinheiro',
+    descricao: 'Modelo prático para decidir com mais consciência, critério e responsabilidade.',
+  },
 ];
 
 const materiais = [
@@ -36,6 +52,8 @@ const bonus = [
 ];
 
 export default function Conteudo() {
+  const [openLesson, setOpenLesson] = useState<number | null>(null);
+
   return (
     <section id="conteudo" className="section-conteudo">
       <div className="container">
@@ -53,10 +71,19 @@ export default function Conteudo() {
         <h3 className="group-title">1. Aulas do curso</h3>
         <div className="lesson-list">
           {aulas.map((aula, i) => (
-            <div key={i} className="lesson-card">
+            <div
+              key={i}
+              className={`lesson-card ${openLesson === i ? 'lesson-card-open' : ''}`}
+              onClick={() => setOpenLesson(openLesson === i ? null : i)}
+            >
               <span className="lesson-number">{i + 1}</span>
-              <span>{aula}</span>
-              <span className="lesson-chevron">˅</span>
+              <div className="lesson-content">
+                <span>{aula.titulo}</span>
+                {openLesson === i && (
+                  <p className="lesson-description">{aula.descricao}</p>
+                )}
+              </div>
+              <span className={`lesson-chevron ${openLesson === i ? 'lesson-chevron-open' : ''}`}>˅</span>
             </div>
           ))}
         </div>
