@@ -11,17 +11,13 @@ export default function Hero() {
   useEffect(() => {
     if (!videoCode || !videoRef.current) return;
 
-    // Parse the HTML to separate the custom element from the script
     const parser = new DOMParser();
     const doc = parser.parseFromString(videoCode, 'text/html');
 
-    // Clear existing content
     videoRef.current.innerHTML = '';
 
-    // Inject the HTML elements (vturb-smartplayer, etc.)
     Array.from(doc.body.childNodes).forEach((node) => {
       if (node.nodeName === 'SCRIPT') {
-        // Scripts need to be re-created to execute
         const script = document.createElement('script');
         const originalScript = node as HTMLScriptElement;
         if (originalScript.src) {
@@ -45,20 +41,6 @@ export default function Hero() {
   return (
     <section id="hero" className="hero">
       <div className="container">
-        <h1>
-          Organize seu dinheiro
-          <br />
-          com <span className="highlight">método simples</span>
-        </h1>
-        <p className="hero-sub">
-          Curso 100% online para estruturar seu dinheiro integrando técnica
-          financeira, padrões emocionais e consciência nas decisões.
-        </p>
-        <p className="hero-details">
-          5 aulas práticas + Planilha Livro Caixa + Bônus exclusivo da primeira
-          turma
-        </p>
-
         {/* Video — VTURB player or placeholder */}
         <div className="video-wrapper">
           {showPlaceholder ? (

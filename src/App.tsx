@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Hero from './components/Hero';
+import Headline from './components/Headline';
 import Problemas from './components/Problemas';
 import Resultados from './components/Resultados';
 import Conteudo from './components/Conteudo';
@@ -36,6 +37,7 @@ function LandingPage() {
   return (
     <VariationProvider>
       <Hero />
+      <Headline />
       <Problemas />
       <Resultados />
       <Conteudo />
