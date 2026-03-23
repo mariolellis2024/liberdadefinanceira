@@ -8,6 +8,7 @@ interface Variation {
   price_original: string;
   price_avista: string;
   price_parcelas: string;
+  page_mode: 'open' | 'hidden';
 }
 
 interface VariationContextType {

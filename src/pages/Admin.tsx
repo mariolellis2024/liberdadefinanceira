@@ -8,6 +8,7 @@ interface Variation {
   price_original: string;
   price_avista: string;
   price_parcelas: string;
+  page_mode: 'open' | 'hidden';
   active: boolean;
 }
 
@@ -59,6 +60,7 @@ export default function Admin() {
   const [varPriceOriginal, setVarPriceOriginal] = useState('R$ 394');
   const [varPriceAvista, setVarPriceAvista] = useState('');
   const [varPriceParcelas, setVarPriceParcelas] = useState('');
+  const [varPageMode, setVarPageMode] = useState<'open' | 'hidden'>('open');
   const [varSaving, setVarSaving] = useState(false);
 
   // Stats
@@ -180,7 +182,7 @@ export default function Admin() {
   // Variation form helpers
   function resetVarForm() {
     setVarName(''); setVarLink(''); setVarPriceOriginal('R$ 394');
-    setVarPriceAvista(''); setVarPriceParcelas('');
+    setVarPriceAvista(''); setVarPriceParcelas(''); setVarPageMode('open');
     setEditingVariation(null); setShowVariationForm(false);
   }
 
@@ -188,6 +190,7 @@ export default function Admin() {
     setEditingVariation(v);
     setVarName(v.name); setVarLink(v.link); setVarPriceOriginal(v.price_original);
     setVarPriceAvista(v.price_avista); setVarPriceParcelas(v.price_parcelas);
+    setVarPageMode(v.page_mode || 'open');
     setShowVariationForm(true);
   }
 
@@ -198,6 +201,7 @@ export default function Admin() {
       const body = {
         name: varName, link: varLink, price_original: varPriceOriginal,
         price_avista: varPriceAvista, price_parcelas: varPriceParcelas,
+        page_mode: varPageMode,
         active: editingVariation ? editingVariation.active : true,
       };
       const url = editingVariation ? `/api/variations/${editingVariation.id}` : '/api/variations';
@@ -409,6 +413,15 @@ export default function Admin() {
                         placeholder='12x de R$ 19,70' required />
                     </div>
                   </div>
+                  <div className="form-row form-row-2">
+                    <div className="form-group">
+                      <label>Modo da página</label>
+                      <select value={varPageMode} onChange={e => setVarPageMode(e.target.value as 'open' | 'hidden')}>
+                        <option value="open">📄 Aberta (tudo visível)</option>
+                        <option value="hidden">📺 Só vídeo (revelada pelo VTURB)</option>
+                      </select>
+                    </div>
+                  </div>
                   <div className="form-actions">
                     <button type="submit" className="btn-admin-primary" disabled={varSaving} style={{ width: 'auto' }}>
                       {varSaving ? 'Salvando...' : editingVariation ? 'Salvar Alterações' : 'Criar Variação'}
@@ -436,6 +449,9 @@ export default function Admin() {
                           <span className="var-price-original">{v.price_original}</span>
                           <span className="var-price-avista">{v.price_avista}</span>
                           <span className="var-price-parcelas">ou {v.price_parcelas}</span>
+                          <span className={`var-page-mode ${v.page_mode === 'hidden' ? 'mode-hidden' : 'mode-open'}`}>
+                            {v.page_mode === 'hidden' ? '📺 Só vídeo' : '📄 Aberta'}
+                          </span>
                         </div>
                         {v.link && <div className="variation-link">🔗 {v.link.substring(0, 50)}...</div>}
                       </div>

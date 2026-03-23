@@ -12,10 +12,11 @@ import Faq from './components/Faq';
 import Footer from './components/Footer';
 import Admin from './pages/Admin';
 import { useAnalytics } from './hooks/useAnalytics';
-import { VariationProvider } from './hooks/useVariation';
+import { VariationProvider, useVariation } from './hooks/useVariation';
 
-function LandingPage() {
-  useAnalytics();
+function LandingPageContent() {
+  const { variation } = useVariation();
+  const isHidden = variation?.page_mode === 'hidden';
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -35,17 +36,29 @@ function LandingPage() {
   }, []);
 
   return (
-    <VariationProvider>
+    <>
       <Hero />
-      <Headline />
-      <Problemas />
-      <Resultados />
-      <Conteudo />
-      <Diferente />
-      <Instrutor />
-      <Preco />
-      <Faq />
+      <div className={isHidden ? 'vturb-hidden' : ''} id="lf-reveal">
+        <Headline />
+        <Problemas />
+        <Resultados />
+        <Conteudo />
+        <Diferente />
+        <Instrutor />
+        <Preco />
+        <Faq />
+      </div>
       <Footer />
+    </>
+  );
+}
+
+function LandingPage() {
+  useAnalytics();
+
+  return (
+    <VariationProvider>
+      <LandingPageContent />
     </VariationProvider>
   );
 }

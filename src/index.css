@@ -1205,6 +1205,15 @@ img {
 }
 
 /* ============================
+   VTURB: HIDDEN PAGE MODE
+   ============================ */
+/* When page_mode is 'hidden', the content below the video is hidden.
+   VTURB's "Show hidden content" feature removes display:none at the pitch moment. */
+.vturb-hidden {
+    display: none !important;
+}
+
+/* ============================
    RESPONSIVE
    ============================ */
 @media (max-width: 768px) {

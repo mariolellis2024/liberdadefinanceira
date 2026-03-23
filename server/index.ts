@@ -184,7 +184,7 @@ app.get('/api/variations', authMiddleware, async (_req, res) => {
 // Criar variação
 app.post('/api/variations', authMiddleware, async (req, res) => {
   try {
-    const { name, link, price_original, price_avista, price_parcelas } = req.body;
+    const { name, link, price_original, price_avista, price_parcelas, page_mode } = req.body;
     if (!name || !price_avista || !price_parcelas) {
       res.status(400).json({ error: 'Nome, preço à vista e parcelas são obrigatórios' });
       return;
@@ -195,6 +195,7 @@ app.post('/api/variations', authMiddleware, async (req, res) => {
       price_original: price_original || 'R$ 394',
       price_avista,
       price_parcelas,
+      page_mode: page_mode || 'open',
     });
     res.json({ success: true, variation });
   } catch {
@@ -206,13 +207,14 @@ app.post('/api/variations', authMiddleware, async (req, res) => {
 app.put('/api/variations/:id', authMiddleware, async (req, res) => {
   try {
     const id = Number(req.params.id);
-    const { name, link, price_original, price_avista, price_parcelas, active } = req.body;
+    const { name, link, price_original, price_avista, price_parcelas, page_mode, active } = req.body;
     const variation = await updateVariation(id, {
       name,
       link: link || '',
       price_original: price_original || 'R$ 394',
       price_avista,
       price_parcelas,
+      page_mode: page_mode || 'open',
       active: active !== undefined ? active : true,
     });
     if (!variation) {

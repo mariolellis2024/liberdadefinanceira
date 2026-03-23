@@ -14,6 +14,7 @@ export interface PriceVariation {
   price_original: string;
   price_avista: string;
   price_parcelas: string;
+  page_mode: 'open' | 'hidden';
   active: boolean;
   created_at: string;
 }
@@ -86,6 +87,11 @@ export async function initDb(): Promise<void> {
         `INSERT INTO settings (key, value) VALUES ('ga_tracking_id', '')`
       );
     }
+
+    // Add page_mode column if missing (migration)
+    await client.query(`
+      ALTER TABLE price_variations ADD COLUMN IF NOT EXISTS page_mode VARCHAR(10) NOT NULL DEFAULT 'open'
+    `);
 
     console.log('✓ Database initialized');
   } finally {
@@ -170,11 +176,12 @@ export async function createVariation(data: {
   price_original: string;
   price_avista: string;
   price_parcelas: string;
+  page_mode?: 'open' | 'hidden';
 }): Promise<PriceVariation> {
   const result = await pool.query(
-    `INSERT INTO price_variations (name, link, price_original, price_avista, price_parcelas)
-     VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-    [data.name, data.link, data.price_original, data.price_avista, data.price_parcelas]
+    `INSERT INTO price_variations (name, link, price_original, price_avista, price_parcelas, page_mode)
+     VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+    [data.name, data.link, data.price_original, data.price_avista, data.price_parcelas, data.page_mode || 'open']
   );
   return result.rows[0];
 }
@@ -187,14 +194,15 @@ export async function updateVariation(
     price_original: string;
     price_avista: string;
     price_parcelas: string;
+    page_mode: 'open' | 'hidden';
     active: boolean;
   }
 ): Promise<PriceVariation | null> {
   const result = await pool.query(
     `UPDATE price_variations
-     SET name = $2, link = $3, price_original = $4, price_avista = $5, price_parcelas = $6, active = $7
+     SET name = $2, link = $3, price_original = $4, price_avista = $5, price_parcelas = $6, page_mode = $7, active = $8
      WHERE id = $1 RETURNING *`,
-    [id, data.name, data.link, data.price_original, data.price_avista, data.price_parcelas, data.active]
+    [id, data.name, data.link, data.price_original, data.price_avista, data.price_parcelas, data.page_mode || 'open', data.active]
   );
   return result.rows[0] || null;
 }
