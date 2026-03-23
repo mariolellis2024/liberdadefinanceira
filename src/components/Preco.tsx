@@ -24,7 +24,8 @@ export default function Preco() {
       <div className="container">
         <h2>Investimento</h2>
         <p>
-          A organização financeira não começa quando você ganha mais.{' '}
+          A organização financeira não começa quando você ganha mais.
+          <br />
           <span className="bold-white">
             Ela começa quando você decide estruturar melhor.
           </span>

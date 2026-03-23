@@ -78,10 +78,10 @@ export default function Conteudo() {
             >
               <span className="lesson-number">{i + 1}</span>
               <div className="lesson-content">
-                <span>{aula.titulo}</span>
-                {openLesson === i && (
+                <span className="lesson-title">{aula.titulo}</span>
+                <div className="lesson-description-wrap">
                   <p className="lesson-description">{aula.descricao}</p>
-                )}
+                </div>
               </div>
               <span className={`lesson-chevron ${openLesson === i ? 'lesson-chevron-open' : ''}`}>˅</span>
             </div>
