@@ -643,16 +643,35 @@ export default function Admin() {
 
             <div className="admin-card">
               <h2>📝 Como configurar na VTURB</h2>
-              <div className="card-description" style={{ lineHeight: '2' }}>
-                <strong>1.</strong> No painel da VTURB, crie um botão → <strong>Custom HTML</strong><br />
-                <strong>2.</strong> Ative <strong>"Show hidden content"</strong><br />
-                <strong>3.</strong> Selecione: <strong>ID</strong><br />
-                <strong>4.</strong> Nome do ID: <code>lf-reveal</code><br />
-                <strong>5.</strong> Defina o tempo de início (ex: <code>03:00</code>)<br />
-                <strong>6.</strong> Marque ✅ "Set as pitch moment"<br />
-                <strong>7.</strong> Marque ✅ "Show after video ends"<br />
-                <strong>8.</strong> Marque ✅ "Keep displaying on future visits"<br />
-                <strong>9.</strong> No campo HTML code, coloque: <code>&lt;div style="display:none"&gt;&lt;/div&gt;</code>
+              <p className="card-description" style={{ marginBottom: '16px' }}>
+                Você precisa criar <strong>2 botões Custom HTML</strong> na VTURB, ambos no mesmo tempo de início:
+              </p>
+
+              <div style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '10px', padding: '16px 20px', marginBottom: '12px' }}>
+                <strong style={{ color: '#166534' }}>🔹 Botão 1 — Revela o conteúdo da página</strong>
+                <div className="card-description" style={{ lineHeight: '2', marginBottom: 0, marginTop: '8px' }}>
+                  <strong>1.</strong> Crie um botão → <strong>Custom HTML</strong><br />
+                  <strong>2.</strong> Ative <strong>"Show hidden content"</strong><br />
+                  <strong>3.</strong> Selecione: <strong>ID</strong><br />
+                  <strong>4.</strong> Nome do ID: <code>lf-reveal</code><br />
+                  <strong>5.</strong> Defina o tempo de início (ex: <code>03:00</code>)<br />
+                  <strong>6.</strong> Marque ✅ "Set as pitch moment"<br />
+                  <strong>7.</strong> Marque ✅ "Show after video ends"<br />
+                  <strong>8.</strong> Marque ✅ "Keep displaying on future visits"
+                </div>
+              </div>
+
+              <div style={{ background: '#ede9fe', border: '1px solid #c4b5fd', borderRadius: '10px', padding: '16px 20px' }}>
+                <strong style={{ color: '#5b21b6' }}>🔹 Botão 2 — Revela o botão e preço (CTA do vídeo)</strong>
+                <div className="card-description" style={{ lineHeight: '2', marginBottom: 0, marginTop: '8px' }}>
+                  <strong>1.</strong> Crie outro botão → <strong>Custom HTML</strong><br />
+                  <strong>2.</strong> Ative <strong>"Show hidden content"</strong><br />
+                  <strong>3.</strong> Selecione: <strong>ID</strong><br />
+                  <strong>4.</strong> Nome do ID: <code>lf-hero-cta</code><br />
+                  <strong>5.</strong> Mesmo tempo de início do botão 1 (ex: <code>03:00</code>)<br />
+                  <strong>6.</strong> Marque ✅ "Show after video ends"<br />
+                  <strong>7.</strong> Marque ✅ "Keep displaying on future visits"
+                </div>
               </div>
             </div>
           </>
