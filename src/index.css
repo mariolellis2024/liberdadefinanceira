@@ -237,10 +237,25 @@ img {
     max-width: 768px;
     margin: 0 auto 48px;
     border-radius: 16px;
-    border: 2px solid rgba(255, 255, 255, 0.15);
     overflow: hidden;
     background: #0d1520;
+}
+
+/* Only apply fixed aspect-ratio to the placeholder — VTURB manages its own height (including headlines) */
+.video-wrapper:has(.video-placeholder) {
     aspect-ratio: 16 / 9;
+    border: 2px solid rgba(255, 255, 255, 0.15);
+}
+
+/* When VTURB is active, let it control its own dimensions */
+.video-wrapper:has(.vturb-container) {
+    overflow: visible;
+    background: transparent;
+    border: none;
+}
+
+.vturb-container {
+    width: 100%;
 }
 
 .video-placeholder {
