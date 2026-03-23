@@ -8,8 +8,48 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <style>
+      /* Inline critical CSS so the loader appears instantly */
+      #page-loader {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        background: #1a2332;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: opacity 0.5s ease, visibility 0.5s ease;
+      }
+      #page-loader.loaded {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
+      #page-loader .loader {
+        width: 60px;
+        aspect-ratio: 4;
+        background: radial-gradient(circle closest-side, #3ee68a 90%, #0000) 0/calc(100%/3) 100% space;
+        clip-path: inset(0 100% 0 0);
+        animation: loader-dots 1s steps(4) infinite;
+      }
+      @keyframes loader-dots {
+        to { clip-path: inset(0 -34% 0 0); }
+      }
+      /* Prevent content from showing until loader is dismissed */
+      #root {
+        opacity: 0;
+        transition: opacity 0.4s ease;
+      }
+      #root.ready {
+        opacity: 1;
+      }
+    </style>
   </head>
   <body>
+    <!-- Full-screen loader — shows instantly before React loads -->
+    <div id="page-loader">
+      <div class="loader"></div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

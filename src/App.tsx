@@ -15,7 +15,25 @@ import { useAnalytics } from './hooks/useAnalytics';
 import { VariationProvider, useVariation } from './hooks/useVariation';
 
 function LandingPageContent() {
-  const { variation } = useVariation();
+  const { variation, loading: variationLoading } = useVariation();
+
+  // Dismiss the loader once variation data is ready
+  useEffect(() => {
+    if (variationLoading) return;
+
+    // Small delay to let React render the DOM before revealing
+    const timer = setTimeout(() => {
+      const loader = document.getElementById('page-loader');
+      const root = document.getElementById('root');
+      if (loader) loader.classList.add('loaded');
+      if (root) root.classList.add('ready');
+
+      // Remove loader from DOM after transition
+      setTimeout(() => loader?.remove(), 600);
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [variationLoading]);
 
   // Allow admins to preview a specific mode via ?preview_mode=open|hidden
   const previewMode = new URLSearchParams(window.location.search).get('preview_mode');
