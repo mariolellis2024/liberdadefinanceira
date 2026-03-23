@@ -63,23 +63,39 @@ app.get('/api/variation', async (req, res) => {
       return;
     }
 
-    // Check if visitor already has an assigned variation
+    // 1. Check cookie first
     const cookieVariationId = req.cookies?.variation_id;
     if (cookieVariationId) {
       const existing = await getVariationById(Number(cookieVariationId));
       if (existing && existing.active) {
-        // Record view
         await recordEvent(existing.id, 'view');
         res.json({ variation: existing });
         return;
       }
     }
 
-    // Assign a random active variation
+    // 2. Fallback: check saved_id from localStorage (sent by frontend)
+    const savedId = req.query.saved_id;
+    if (savedId) {
+      const existing = await getVariationById(Number(savedId));
+      if (existing && existing.active) {
+        // Re-set the cookie since it was lost
+        res.cookie('variation_id', String(existing.id), {
+          httpOnly: false,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: 30 * 24 * 60 * 60 * 1000,
+        });
+        await recordEvent(existing.id, 'view');
+        res.json({ variation: existing });
+        return;
+      }
+    }
+
+    // 3. Assign a random active variation (new visitor)
     const randomIndex = Math.floor(Math.random() * activeVariations.length);
     const assigned = activeVariations[randomIndex];
 
-    // Set cookie (30 days)
     res.cookie('variation_id', String(assigned.id), {
       httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
@@ -87,9 +103,7 @@ app.get('/api/variation', async (req, res) => {
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
-    // Record view
     await recordEvent(assigned.id, 'view');
-
     res.json({ variation: assigned });
   } catch {
     res.json({ variation: null });

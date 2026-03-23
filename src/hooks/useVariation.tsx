@@ -20,6 +20,8 @@ const VariationContext = createContext<VariationContextType>({
   loading: true,
 });
 
+const LS_KEY = 'lf_variation_id';
+
 export function VariationProvider({ children }: { children: React.ReactNode }) {
   const [variation, setVariation] = useState<Variation | null>(null);
   const [loading, setLoading] = useState(true);
@@ -27,10 +29,20 @@ export function VariationProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     async function fetchVariation() {
       try {
-        const res = await fetch('/api/variation');
+        // Check localStorage for a previously assigned variation ID
+        const savedId = localStorage.getItem(LS_KEY);
+
+        // Send the saved ID as a query param so the server can use it as fallback
+        const url = savedId ? `/api/variation?saved_id=${savedId}` : '/api/variation';
+        const res = await fetch(url);
         const data = await res.json();
+
         if (data.variation) {
           setVariation(data.variation);
+
+          // Persist to localStorage as backup (survives cookie clears)
+          localStorage.setItem(LS_KEY, String(data.variation.id));
+
           // Track which variation was assigned
           trackEvent('variation_assigned', 'AB_Test', `${data.variation.name} (ID: ${data.variation.id})`);
         }
