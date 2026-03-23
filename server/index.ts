@@ -42,6 +42,17 @@ app.get('/api/analytics', async (_req, res) => {
   }
 });
 
+// VTURB video code — público, frontend precisa renderizar o player
+app.get('/api/video', async (_req, res) => {
+  try {
+    const videoCode = await getSetting('vturb_video_code');
+    const speedCode = await getSetting('vturb_speed_code');
+    res.json({ vturb_video_code: videoCode, vturb_speed_code: speedCode });
+  } catch {
+    res.json({ vturb_video_code: '', vturb_speed_code: '' });
+  }
+});
+
 // Variação de preço para o visitante — atribui aleatoriamente via cookie
 app.get('/api/variation', async (req, res) => {
   try {
@@ -117,7 +128,9 @@ app.post('/api/password', authMiddleware, changePassword);
 app.get('/api/settings', authMiddleware, async (_req, res) => {
   try {
     const gaId = await getSetting('ga_tracking_id');
-    res.json({ ga_tracking_id: gaId });
+    const videoCode = await getSetting('vturb_video_code');
+    const speedCode = await getSetting('vturb_speed_code');
+    res.json({ ga_tracking_id: gaId, vturb_video_code: videoCode, vturb_speed_code: speedCode });
   } catch {
     res.status(500).json({ error: 'Erro ao buscar configurações' });
   }
@@ -126,12 +139,16 @@ app.get('/api/settings', authMiddleware, async (_req, res) => {
 // Salvar GA tracking ID (protegido)
 app.post('/api/settings', authMiddleware, async (req, res) => {
   try {
-    const { ga_tracking_id } = req.body;
-    if (ga_tracking_id === undefined) {
-      res.status(400).json({ error: 'ga_tracking_id é obrigatório' });
-      return;
+    const { ga_tracking_id, vturb_video_code } = req.body;
+    if (ga_tracking_id !== undefined) {
+      await updateSetting('ga_tracking_id', ga_tracking_id);
     }
-    await updateSetting('ga_tracking_id', ga_tracking_id);
+    if (vturb_video_code !== undefined) {
+      await updateSetting('vturb_video_code', vturb_video_code);
+    }
+    if (req.body.vturb_speed_code !== undefined) {
+      await updateSetting('vturb_speed_code', req.body.vturb_speed_code);
+    }
     res.json({ success: true, message: 'Configurações salvas' });
   } catch {
     res.status(500).json({ error: 'Erro ao salvar configurações' });

@@ -36,6 +36,12 @@ export default function Admin() {
   const [settingsSaved, setSettingsSaved] = useState(false);
   const [settingsLoading, setSettingsLoading] = useState(false);
 
+  // VTURB Video
+  const [vturbVideoCode, setVturbVideoCode] = useState('');
+  const [vturbSpeedCode, setVturbSpeedCode] = useState('');
+  const [vturbSaved, setVturbSaved] = useState(false);
+  const [vturbLoading, setVturbLoading] = useState(false);
+
   // Password
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -77,6 +83,8 @@ export default function Admin() {
     const res = await fetch('/api/settings');
     const data = await res.json();
     setGaTrackingId(data.ga_tracking_id || '');
+    setVturbVideoCode(data.vturb_video_code || '');
+    setVturbSpeedCode(data.vturb_speed_code || '');
   }
 
   async function loadVariations() {
@@ -129,6 +137,22 @@ export default function Admin() {
       if (res.ok) { setSettingsSaved(true); setTimeout(() => setSettingsSaved(false), 3000); }
     } catch {}
     finally { setSettingsLoading(false); }
+  };
+
+  // Save VTURB
+  const handleSaveVturb = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setVturbLoading(true);
+    setVturbSaved(false);
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vturb_video_code: vturbVideoCode, vturb_speed_code: vturbSpeedCode }),
+      });
+      if (res.ok) { setVturbSaved(true); setTimeout(() => setVturbSaved(false), 3000); }
+    } catch {}
+    finally { setVturbLoading(false); }
   };
 
   // Change password
@@ -427,6 +451,37 @@ export default function Admin() {
                   ))}
                 </div>
               )}
+            </div>
+
+            {/* VTURB Video */}
+            <div className="admin-card">
+              <h2>🎬 Vídeo VTURB</h2>
+              <p className="card-description">
+                Cole o código de embed do vídeo e o código de velocidade da VTURB.
+                O vídeo será exibido no topo da página principal.
+              </p>
+              <form onSubmit={handleSaveVturb}>
+                <div className="form-group">
+                  <label>Código do Vídeo</label>
+                  <textarea className="admin-textarea" value={vturbVideoCode}
+                    onChange={e => setVturbVideoCode(e.target.value)}
+                    placeholder='<vturb-smartplayer id="ab-..." style="..."></vturb-smartplayer> <script type="text/javascript">...</script>'
+                    rows={4} />
+                </div>
+                <div className="form-group">
+                  <label>Código de Velocidade</label>
+                  <textarea className="admin-textarea" value={vturbSpeedCode}
+                    onChange={e => setVturbSpeedCode(e.target.value)}
+                    placeholder='<script>!function(i,n){...}(window,performance);</script> <link rel="preload" ...>'
+                    rows={4} />
+                </div>
+                <div className="form-actions">
+                  <button type="submit" className="btn-admin-primary" disabled={vturbLoading} style={{ width: 'auto' }}>
+                    {vturbLoading ? 'Salvando...' : 'Salvar Vídeo'}
+                  </button>
+                  {vturbSaved && <span className="success-msg">✓ Salvo!</span>}
+                </div>
+              </form>
             </div>
 
             {/* Google Analytics */}
