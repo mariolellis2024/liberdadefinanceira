@@ -5,7 +5,7 @@ export default function Instrutor() {
         <h2>Quem ensina neste curso</h2>
         <div className="instrutor-content">
           <img
-            src="/instructor.png"
+            src="/rodrigo.png"
             alt="Rodrigo Ventre"
             className="instrutor-photo"
           />
@@ -39,7 +39,11 @@ export default function Instrutor() {
               estrutura simples, prática e aplicável para organizar a vida
               financeira pessoal.
             </p>
-            <div className="instrutor-signature">Rodrigo Ventre</div>
+            <img
+              src="/assinatura-rodrigo.png"
+              alt="Assinatura Rodrigo Ventre"
+              className="instrutor-assinatura"
+            />
           </div>
         </div>
       </div>

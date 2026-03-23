@@ -791,12 +791,11 @@ img {
     color: #e0e0e0;
 }
 
-.instrutor-signature {
-    font-family: 'Dancing Script', cursive, 'Brush Script MT', cursive;
-    font-size: 2rem;
-    color: rgba(255, 255, 255, 0.7);
-    margin-top: 16px;
-    font-style: italic;
+.instrutor-assinatura {
+    max-width: 200px;
+    margin-top: 20px;
+    opacity: 0.8;
+    filter: brightness(2);
 }
 
 /* ============================
