@@ -231,6 +231,25 @@ export default function Admin() {
     loadStats();
   };
 
+  const handleDuplicateVariation = async (v: Variation) => {
+    const newMode = v.page_mode === 'open' ? 'hidden' : 'open';
+    const modeLabel = newMode === 'hidden' ? 'Fechada' : 'Aberta';
+    await fetch('/api/variations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: `${v.name} (${modeLabel})`,
+        link: v.link,
+        price_original: v.price_original,
+        price_avista: v.price_avista,
+        price_parcelas: v.price_parcelas,
+        page_mode: newMode,
+      }),
+    });
+    loadVariations();
+    loadStats();
+  };
+
   if (loading) {
     return <div className="admin-page"><div className="admin-container"><p className="admin-loading">Carregando...</p></div></div>;
   }
@@ -495,6 +514,8 @@ export default function Admin() {
                         {v.link && <div className="variation-link">🔗 {v.link.substring(0, 50)}...</div>}
                       </div>
                       <div className="variation-actions">
+                        <button className="btn-icon" onClick={() => handleDuplicateVariation(v)}
+                          title={v.page_mode === 'open' ? 'Duplicar como Fechada' : 'Duplicar como Aberta'}>📋</button>
                         <button className="btn-icon" onClick={() => handleToggleVariation(v)}
                           title={v.active ? 'Desativar' : 'Ativar'}>
                           {v.active ? '⏸️' : '▶️'}
