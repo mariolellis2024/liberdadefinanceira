@@ -11,6 +11,7 @@ import Faq from './components/Faq';
 import Footer from './components/Footer';
 import Admin from './pages/Admin';
 import { useAnalytics } from './hooks/useAnalytics';
+import { VariationProvider } from './hooks/useVariation';
 
 function LandingPage() {
   useAnalytics();
@@ -33,7 +34,7 @@ function LandingPage() {
   }, []);
 
   return (
-    <>
+    <VariationProvider>
       <Hero />
       <Problemas />
       <Resultados />
@@ -43,7 +44,7 @@ function LandingPage() {
       <Preco />
       <Faq />
       <Footer />
-    </>
+    </VariationProvider>
   );
 }
 

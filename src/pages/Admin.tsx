@@ -1,21 +1,42 @@
 import { useState, useEffect } from 'react';
 import './Admin.css';
 
+interface Variation {
+  id: number;
+  name: string;
+  link: string;
+  price_original: string;
+  price_avista: string;
+  price_parcelas: string;
+  active: boolean;
+}
+
+interface VariationStat {
+  variation_id: number;
+  variation_name: string;
+  views: number;
+  clicks: number;
+  ctr: number;
+}
+
+type Tab = 'dashboard' | 'config';
+
 export default function Admin() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<Tab>('dashboard');
 
-  // Login state
+  // Login
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
 
-  // Settings state
+  // GA Settings
   const [gaTrackingId, setGaTrackingId] = useState('');
   const [settingsSaved, setSettingsSaved] = useState(false);
   const [settingsLoading, setSettingsLoading] = useState(false);
 
-  // Password change state
+  // Password
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -23,31 +44,58 @@ export default function Admin() {
   const [passwordError, setPasswordError] = useState('');
   const [passwordLoading, setPasswordLoading] = useState(false);
 
-  // Check auth on mount
+  // Variations
+  const [variations, setVariations] = useState<Variation[]>([]);
+  const [showVariationForm, setShowVariationForm] = useState(false);
+  const [editingVariation, setEditingVariation] = useState<Variation | null>(null);
+  const [varName, setVarName] = useState('');
+  const [varLink, setVarLink] = useState('');
+  const [varPriceOriginal, setVarPriceOriginal] = useState('R$ 394');
+  const [varPriceAvista, setVarPriceAvista] = useState('');
+  const [varPriceParcelas, setVarPriceParcelas] = useState('');
+  const [varSaving, setVarSaving] = useState(false);
+
+  // Stats
+  const [stats, setStats] = useState<VariationStat[]>([]);
+
+  // Auth check
   useEffect(() => {
     fetch('/api/auth/check')
-      .then((res) => {
-        if (res.ok) setIsAuthenticated(true);
-      })
+      .then((res) => { if (res.ok) setIsAuthenticated(true); })
       .finally(() => setLoading(false));
   }, []);
 
-  // Load settings when authenticated
+  // Load data when authenticated
   useEffect(() => {
     if (!isAuthenticated) return;
-    fetch('/api/settings')
-      .then((res) => res.json())
-      .then((data) => {
-        setGaTrackingId(data.ga_tracking_id || '');
-      });
+    loadSettings();
+    loadVariations();
+    loadStats();
   }, [isAuthenticated]);
 
-  // Login handler
+  async function loadSettings() {
+    const res = await fetch('/api/settings');
+    const data = await res.json();
+    setGaTrackingId(data.ga_tracking_id || '');
+  }
+
+  async function loadVariations() {
+    const res = await fetch('/api/variations');
+    const data = await res.json();
+    setVariations(data.variations || []);
+  }
+
+  async function loadStats() {
+    const res = await fetch('/api/variations/stats');
+    const data = await res.json();
+    setStats(data.stats || []);
+  }
+
+  // Login
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginLoading(true);
     setLoginError('');
-
     try {
       const res = await fetch('/api/login', {
         method: 'POST',
@@ -55,82 +103,10 @@ export default function Admin() {
         body: JSON.stringify({ password }),
       });
       const data = await res.json();
-
-      if (res.ok) {
-        setIsAuthenticated(true);
-        setPassword('');
-      } else {
-        setLoginError(data.error || 'Erro ao fazer login');
-      }
-    } catch {
-      setLoginError('Erro de conexão');
-    } finally {
-      setLoginLoading(false);
-    }
-  };
-
-  // Save GA settings
-  const handleSaveSettings = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSettingsLoading(true);
-    setSettingsSaved(false);
-
-    try {
-      const res = await fetch('/api/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ga_tracking_id: gaTrackingId }),
-      });
-
-      if (res.ok) {
-        setSettingsSaved(true);
-        setTimeout(() => setSettingsSaved(false), 3000);
-      }
-    } catch {
-      // ignore
-    } finally {
-      setSettingsLoading(false);
-    }
-  };
-
-  // Change password
-  const handleChangePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setPasswordError('');
-    setPasswordMsg('');
-
-    if (newPassword !== confirmPassword) {
-      setPasswordError('As senhas não coincidem');
-      return;
-    }
-
-    setPasswordLoading(true);
-
-    try {
-      const res = await fetch('/api/password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          currentPassword,
-          newPassword,
-        }),
-      });
-      const data = await res.json();
-
-      if (res.ok) {
-        setPasswordMsg('Senha atualizada com sucesso!');
-        setCurrentPassword('');
-        setNewPassword('');
-        setConfirmPassword('');
-        setTimeout(() => setPasswordMsg(''), 3000);
-      } else {
-        setPasswordError(data.error || 'Erro ao trocar senha');
-      }
-    } catch {
-      setPasswordError('Erro de conexão');
-    } finally {
-      setPasswordLoading(false);
-    }
+      if (res.ok) { setIsAuthenticated(true); setPassword(''); }
+      else setLoginError(data.error || 'Erro ao fazer login');
+    } catch { setLoginError('Erro de conexão'); }
+    finally { setLoginLoading(false); }
   };
 
   // Logout
@@ -139,17 +115,98 @@ export default function Admin() {
     setIsAuthenticated(false);
   };
 
-  if (loading) {
-    return (
-      <div className="admin-page">
-        <div className="admin-container">
-          <p className="admin-loading">Carregando...</p>
-        </div>
-      </div>
-    );
+  // Save GA
+  const handleSaveSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSettingsLoading(true);
+    setSettingsSaved(false);
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ga_tracking_id: gaTrackingId }),
+      });
+      if (res.ok) { setSettingsSaved(true); setTimeout(() => setSettingsSaved(false), 3000); }
+    } catch {}
+    finally { setSettingsLoading(false); }
+  };
+
+  // Change password
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError(''); setPasswordMsg('');
+    if (newPassword !== confirmPassword) { setPasswordError('As senhas não coincidem'); return; }
+    setPasswordLoading(true);
+    try {
+      const res = await fetch('/api/password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setPasswordMsg('Senha atualizada!');
+        setCurrentPassword(''); setNewPassword(''); setConfirmPassword('');
+        setTimeout(() => setPasswordMsg(''), 3000);
+      } else setPasswordError(data.error || 'Erro');
+    } catch { setPasswordError('Erro de conexão'); }
+    finally { setPasswordLoading(false); }
+  };
+
+  // Variation form helpers
+  function resetVarForm() {
+    setVarName(''); setVarLink(''); setVarPriceOriginal('R$ 394');
+    setVarPriceAvista(''); setVarPriceParcelas('');
+    setEditingVariation(null); setShowVariationForm(false);
   }
 
-  // ==================== LOGIN SCREEN ====================
+  function startEditVariation(v: Variation) {
+    setEditingVariation(v);
+    setVarName(v.name); setVarLink(v.link); setVarPriceOriginal(v.price_original);
+    setVarPriceAvista(v.price_avista); setVarPriceParcelas(v.price_parcelas);
+    setShowVariationForm(true);
+  }
+
+  const handleSaveVariation = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setVarSaving(true);
+    try {
+      const body = {
+        name: varName, link: varLink, price_original: varPriceOriginal,
+        price_avista: varPriceAvista, price_parcelas: varPriceParcelas,
+        active: editingVariation ? editingVariation.active : true,
+      };
+      const url = editingVariation ? `/api/variations/${editingVariation.id}` : '/api/variations';
+      const method = editingVariation ? 'PUT' : 'POST';
+      await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      resetVarForm();
+      loadVariations();
+      loadStats();
+    } catch {}
+    finally { setVarSaving(false); }
+  };
+
+  const handleToggleVariation = async (v: Variation) => {
+    await fetch(`/api/variations/${v.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...v, active: !v.active }),
+    });
+    loadVariations();
+  };
+
+  const handleDeleteVariation = async (id: number) => {
+    if (!confirm('Tem certeza que deseja excluir esta variação?')) return;
+    await fetch(`/api/variations/${id}`, { method: 'DELETE' });
+    loadVariations();
+    loadStats();
+  };
+
+  if (loading) {
+    return <div className="admin-page"><div className="admin-container"><p className="admin-loading">Carregando...</p></div></div>;
+  }
+
+  // ==================== LOGIN ====================
   if (!isAuthenticated) {
     return (
       <div className="admin-page">
@@ -158,28 +215,14 @@ export default function Admin() {
             <div className="admin-logo">🔐</div>
             <h1>Painel Administrativo</h1>
             <p className="admin-subtitle">Liberdade Financeira</p>
-
             <form onSubmit={handleLogin}>
               <div className="form-group">
                 <label htmlFor="password">Senha</label>
-                <input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Digite sua senha"
-                  autoFocus
-                  required
-                />
+                <input id="password" type="password" value={password}
+                  onChange={(e) => setPassword(e.target.value)} placeholder="Digite sua senha" autoFocus required />
               </div>
-
               {loginError && <p className="error-msg">{loginError}</p>}
-
-              <button
-                type="submit"
-                className="btn-admin-primary"
-                disabled={loginLoading}
-              >
+              <button type="submit" className="btn-admin-primary" disabled={loginLoading}>
                 {loginLoading ? 'Entrando...' : 'Entrar'}
               </button>
             </form>
@@ -190,113 +233,255 @@ export default function Admin() {
   }
 
   // ==================== DASHBOARD ====================
+  const totalViews = stats.reduce((sum, s) => sum + Number(s.views), 0);
+  const totalClicks = stats.reduce((sum, s) => sum + Number(s.clicks), 0);
+  const totalCtr = totalViews > 0 ? ((totalClicks / totalViews) * 100).toFixed(2) : '0.00';
+
   return (
     <div className="admin-page">
       <header className="admin-header">
         <div className="admin-header-inner">
-          <h1>⚙️ Admin — Liberdade Financeira</h1>
-          <button className="btn-admin-logout" onClick={handleLogout}>
-            Sair
-          </button>
+          <h1>⚙️ Liberdade Financeira</h1>
+          <div className="admin-header-right">
+            <nav className="admin-tabs">
+              <button className={`tab-btn ${activeTab === 'dashboard' ? 'active' : ''}`}
+                onClick={() => { setActiveTab('dashboard'); loadStats(); }}>
+                📊 Dashboard
+              </button>
+              <button className={`tab-btn ${activeTab === 'config' ? 'active' : ''}`}
+                onClick={() => setActiveTab('config')}>
+                ⚙️ Configurações
+              </button>
+            </nav>
+            <button className="btn-admin-logout" onClick={handleLogout}>Sair</button>
+          </div>
         </div>
       </header>
 
       <div className="admin-container">
-        {/* Google Analytics Card */}
-        <div className="admin-card">
-          <h2>📊 Google Analytics</h2>
-          <p className="card-description">
-            Cole o ID de rastreamento do Google Analytics (ex:{' '}
-            <code>G-XXXXXXXXXX</code>). O script será injetado automaticamente
-            em todas as páginas.
-          </p>
-
-          <form onSubmit={handleSaveSettings}>
-            <div className="form-group">
-              <label htmlFor="gaId">Measurement ID</label>
-              <input
-                id="gaId"
-                type="text"
-                value={gaTrackingId}
-                onChange={(e) => setGaTrackingId(e.target.value)}
-                placeholder="G-XXXXXXXXXX"
-              />
+        {activeTab === 'dashboard' && (
+          <>
+            {/* Summary Cards */}
+            <div className="stats-summary">
+              <div className="stat-card">
+                <span className="stat-number">{totalViews}</span>
+                <span className="stat-label">Exibições</span>
+              </div>
+              <div className="stat-card">
+                <span className="stat-number">{totalClicks}</span>
+                <span className="stat-label">Cliques</span>
+              </div>
+              <div className="stat-card stat-card-highlight">
+                <span className="stat-number">{totalCtr}%</span>
+                <span className="stat-label">CTR Geral</span>
+              </div>
+              <div className="stat-card">
+                <span className="stat-number">{variations.filter(v => v.active).length}</span>
+                <span className="stat-label">Variações Ativas</span>
+              </div>
             </div>
 
-            <div className="form-actions">
-              <button
-                type="submit"
-                className="btn-admin-primary"
-                disabled={settingsLoading}
-              >
-                {settingsLoading ? 'Salvando...' : 'Salvar'}
-              </button>
-              {settingsSaved && (
-                <span className="success-msg">✓ Salvo com sucesso!</span>
+            {/* Performance per Variation */}
+            <div className="admin-card">
+              <div className="card-header-row">
+                <h2>📈 Performance por Variação</h2>
+                <button className="btn-admin-small" onClick={loadStats}>↻ Atualizar</button>
+              </div>
+
+              {stats.length === 0 ? (
+                <p className="card-description">Nenhuma variação criada ainda. Vá em Configurações para criar.</p>
+              ) : (
+                <div className="stats-table-wrapper">
+                  <table className="stats-table">
+                    <thead>
+                      <tr>
+                        <th>Variação</th>
+                        <th>Exibições</th>
+                        <th>Cliques</th>
+                        <th>CTR</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {stats.map((s) => {
+                        const variation = variations.find(v => v.id === s.variation_id);
+                        return (
+                          <tr key={s.variation_id}>
+                            <td>
+                              <strong>{s.variation_name}</strong>
+                              {variation && (
+                                <span className="stat-price-hint">{variation.price_avista}</span>
+                              )}
+                            </td>
+                            <td>{s.views}</td>
+                            <td>{s.clicks}</td>
+                            <td>
+                              <span className={`ctr-badge ${Number(s.ctr) > 5 ? 'ctr-good' : Number(s.ctr) > 2 ? 'ctr-ok' : 'ctr-low'}`}>
+                                {s.ctr}%
+                              </span>
+                            </td>
+                            <td>
+                              <span className={`status-dot ${variation?.active ? 'active' : 'inactive'}`}>
+                                {variation?.active ? 'Ativa' : 'Inativa'}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
-          </form>
-        </div>
+          </>
+        )}
 
-        {/* Change Password Card */}
-        <div className="admin-card">
-          <h2>🔑 Trocar Senha</h2>
-          <p className="card-description">
-            Atualize a senha de acesso ao painel administrativo.
-          </p>
+        {activeTab === 'config' && (
+          <>
+            {/* Price Variations */}
+            <div className="admin-card">
+              <div className="card-header-row">
+                <h2>🔄 Rotação de Preços (Teste A/B)</h2>
+                {!showVariationForm && (
+                  <button className="btn-admin-small btn-add" onClick={() => setShowVariationForm(true)}>
+                    + Nova Variação
+                  </button>
+                )}
+              </div>
+              <p className="card-description">
+                Cada visitante recebe uma variação aleatória. Os preços e links são exibidos em todos os botões CTA.
+              </p>
 
-          <form onSubmit={handleChangePassword}>
-            <div className="form-group">
-              <label htmlFor="currentPwd">Senha atual</label>
-              <input
-                id="currentPwd"
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                placeholder="Senha atual"
-                required
-              />
+              {/* Variation Form */}
+              {showVariationForm && (
+                <form className="variation-form" onSubmit={handleSaveVariation}>
+                  <h3>{editingVariation ? 'Editar Variação' : 'Nova Variação'}</h3>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label>Nome interno</label>
+                      <input value={varName} onChange={e => setVarName(e.target.value)}
+                        placeholder='Ex: "Oferta R$ 197"' required />
+                    </div>
+                    <div className="form-group">
+                      <label>Link de checkout</label>
+                      <input value={varLink} onChange={e => setVarLink(e.target.value)}
+                        placeholder="https://pay.hotmart.com/..." />
+                    </div>
+                  </div>
+                  <div className="form-row form-row-3">
+                    <div className="form-group">
+                      <label>Preço original (riscado)</label>
+                      <input value={varPriceOriginal} onChange={e => setVarPriceOriginal(e.target.value)}
+                        placeholder="R$ 394" required />
+                    </div>
+                    <div className="form-group">
+                      <label>Preço à vista</label>
+                      <input value={varPriceAvista} onChange={e => setVarPriceAvista(e.target.value)}
+                        placeholder="R$ 197" required />
+                    </div>
+                    <div className="form-group">
+                      <label>Parcelas</label>
+                      <input value={varPriceParcelas} onChange={e => setVarPriceParcelas(e.target.value)}
+                        placeholder='12x de R$ 19,70' required />
+                    </div>
+                  </div>
+                  <div className="form-actions">
+                    <button type="submit" className="btn-admin-primary" disabled={varSaving} style={{ width: 'auto' }}>
+                      {varSaving ? 'Salvando...' : editingVariation ? 'Salvar Alterações' : 'Criar Variação'}
+                    </button>
+                    <button type="button" className="btn-admin-cancel" onClick={resetVarForm}>Cancelar</button>
+                  </div>
+                </form>
+              )}
+
+              {/* Variations List */}
+              {variations.length === 0 && !showVariationForm ? (
+                <p className="empty-state">Nenhuma variação criada. Clique em "+ Nova Variação" para começar.</p>
+              ) : (
+                <div className="variations-list">
+                  {variations.map((v) => (
+                    <div key={v.id} className={`variation-item ${v.active ? '' : 'variation-inactive'}`}>
+                      <div className="variation-info">
+                        <div className="variation-name">
+                          <strong>{v.name}</strong>
+                          <span className={`status-dot ${v.active ? 'active' : 'inactive'}`}>
+                            {v.active ? 'Ativa' : 'Inativa'}
+                          </span>
+                        </div>
+                        <div className="variation-prices">
+                          <span className="var-price-original">{v.price_original}</span>
+                          <span className="var-price-avista">{v.price_avista}</span>
+                          <span className="var-price-parcelas">ou {v.price_parcelas}</span>
+                        </div>
+                        {v.link && <div className="variation-link">🔗 {v.link.substring(0, 50)}...</div>}
+                      </div>
+                      <div className="variation-actions">
+                        <button className="btn-icon" onClick={() => handleToggleVariation(v)}
+                          title={v.active ? 'Desativar' : 'Ativar'}>
+                          {v.active ? '⏸️' : '▶️'}
+                        </button>
+                        <button className="btn-icon" onClick={() => startEditVariation(v)} title="Editar">✏️</button>
+                        <button className="btn-icon btn-icon-danger" onClick={() => handleDeleteVariation(v.id)} title="Excluir">🗑️</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
-            <div className="form-group">
-              <label htmlFor="newPwd">Nova senha</label>
-              <input
-                id="newPwd"
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Nova senha (mín. 6 caracteres)"
-                required
-                minLength={6}
-              />
+            {/* Google Analytics */}
+            <div className="admin-card">
+              <h2>📊 Google Analytics</h2>
+              <p className="card-description">
+                Cole o ID de rastreamento (ex: <code>G-XXXXXXXXXX</code>). Será injetado automaticamente em todas as páginas.
+              </p>
+              <form onSubmit={handleSaveSettings}>
+                <div className="form-group">
+                  <label htmlFor="gaId">Measurement ID</label>
+                  <input id="gaId" type="text" value={gaTrackingId}
+                    onChange={(e) => setGaTrackingId(e.target.value)} placeholder="G-XXXXXXXXXX" />
+                </div>
+                <div className="form-actions">
+                  <button type="submit" className="btn-admin-primary" disabled={settingsLoading} style={{ width: 'auto' }}>
+                    {settingsLoading ? 'Salvando...' : 'Salvar'}
+                  </button>
+                  {settingsSaved && <span className="success-msg">✓ Salvo!</span>}
+                </div>
+              </form>
             </div>
 
-            <div className="form-group">
-              <label htmlFor="confirmPwd">Confirmar nova senha</label>
-              <input
-                id="confirmPwd"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Repita a nova senha"
-                required
-              />
+            {/* Change Password */}
+            <div className="admin-card">
+              <h2>🔑 Trocar Senha</h2>
+              <form onSubmit={handleChangePassword}>
+                <div className="form-group">
+                  <label>Senha atual</label>
+                  <input type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)}
+                    placeholder="Senha atual" required />
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Nova senha</label>
+                    <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)}
+                      placeholder="Mín. 6 caracteres" required minLength={6} />
+                  </div>
+                  <div className="form-group">
+                    <label>Confirmar</label>
+                    <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
+                      placeholder="Repita a nova senha" required />
+                  </div>
+                </div>
+                {passwordError && <p className="error-msg">{passwordError}</p>}
+                {passwordMsg && <p className="success-msg">{passwordMsg}</p>}
+                <div className="form-actions">
+                  <button type="submit" className="btn-admin-primary" disabled={passwordLoading} style={{ width: 'auto' }}>
+                    {passwordLoading ? 'Atualizando...' : 'Atualizar Senha'}
+                  </button>
+                </div>
+              </form>
             </div>
-
-            {passwordError && <p className="error-msg">{passwordError}</p>}
-            {passwordMsg && <p className="success-msg">{passwordMsg}</p>}
-
-            <div className="form-actions">
-              <button
-                type="submit"
-                className="btn-admin-primary"
-                disabled={passwordLoading}
-              >
-                {passwordLoading ? 'Atualizando...' : 'Atualizar Senha'}
-              </button>
-            </div>
-          </form>
-        </div>
+          </>
+        )}
       </div>
     </div>
   );

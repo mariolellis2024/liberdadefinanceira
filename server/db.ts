@@ -5,14 +5,62 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
+// ============ TYPES ============
+
+export interface PriceVariation {
+  id: number;
+  name: string;
+  link: string;
+  price_original: string;
+  price_avista: string;
+  price_parcelas: string;
+  active: boolean;
+  created_at: string;
+}
+
+export interface VariationStats {
+  variation_id: number;
+  variation_name: string;
+  views: number;
+  clicks: number;
+  ctr: number;
+}
+
+// ============ INIT ============
+
 export async function initDb(): Promise<void> {
   const client = await pool.connect();
   try {
+    // Settings table
     await client.query(`
       CREATE TABLE IF NOT EXISTS settings (
         key VARCHAR(100) PRIMARY KEY,
         value TEXT NOT NULL,
         updated_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
+    // Price variations table
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS price_variations (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        link TEXT NOT NULL DEFAULT '',
+        price_original VARCHAR(20) NOT NULL DEFAULT 'R$ 394',
+        price_avista VARCHAR(20) NOT NULL DEFAULT 'R$ 197',
+        price_parcelas VARCHAR(30) NOT NULL DEFAULT '12x de R$ 19,70',
+        active BOOLEAN DEFAULT true,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+
+    // Variation stats table — tracks views and clicks per variation
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS variation_events (
+        id SERIAL PRIMARY KEY,
+        variation_id INTEGER NOT NULL REFERENCES price_variations(id) ON DELETE CASCADE,
+        event_type VARCHAR(10) NOT NULL CHECK (event_type IN ('view', 'click')),
+        created_at TIMESTAMP DEFAULT NOW()
       )
     `);
 
@@ -44,6 +92,8 @@ export async function initDb(): Promise<void> {
     client.release();
   }
 }
+
+// ============ SETTINGS ============
 
 export async function getPasswordHash(): Promise<string> {
   const result = await pool.query(
@@ -86,6 +136,110 @@ export async function updateSetting(
       [key, value]
     );
   }
+}
+
+// ============ PRICE VARIATIONS ============
+
+export async function getVariations(): Promise<PriceVariation[]> {
+  const result = await pool.query(
+    `SELECT * FROM price_variations ORDER BY created_at ASC`
+  );
+  return result.rows;
+}
+
+export async function getActiveVariations(): Promise<PriceVariation[]> {
+  const result = await pool.query(
+    `SELECT * FROM price_variations WHERE active = true ORDER BY created_at ASC`
+  );
+  return result.rows;
+}
+
+export async function getVariationById(
+  id: number
+): Promise<PriceVariation | null> {
+  const result = await pool.query(
+    `SELECT * FROM price_variations WHERE id = $1`,
+    [id]
+  );
+  return result.rows[0] || null;
+}
+
+export async function createVariation(data: {
+  name: string;
+  link: string;
+  price_original: string;
+  price_avista: string;
+  price_parcelas: string;
+}): Promise<PriceVariation> {
+  const result = await pool.query(
+    `INSERT INTO price_variations (name, link, price_original, price_avista, price_parcelas)
+     VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+    [data.name, data.link, data.price_original, data.price_avista, data.price_parcelas]
+  );
+  return result.rows[0];
+}
+
+export async function updateVariation(
+  id: number,
+  data: {
+    name: string;
+    link: string;
+    price_original: string;
+    price_avista: string;
+    price_parcelas: string;
+    active: boolean;
+  }
+): Promise<PriceVariation | null> {
+  const result = await pool.query(
+    `UPDATE price_variations
+     SET name = $2, link = $3, price_original = $4, price_avista = $5, price_parcelas = $6, active = $7
+     WHERE id = $1 RETURNING *`,
+    [id, data.name, data.link, data.price_original, data.price_avista, data.price_parcelas, data.active]
+  );
+  return result.rows[0] || null;
+}
+
+export async function deleteVariation(id: number): Promise<boolean> {
+  const result = await pool.query(
+    `DELETE FROM price_variations WHERE id = $1`,
+    [id]
+  );
+  return (result.rowCount ?? 0) > 0;
+}
+
+// ============ VARIATION EVENTS (Analytics) ============
+
+export async function recordEvent(
+  variationId: number,
+  eventType: 'view' | 'click'
+): Promise<void> {
+  await pool.query(
+    `INSERT INTO variation_events (variation_id, event_type) VALUES ($1, $2)`,
+    [variationId, eventType]
+  );
+}
+
+export async function getVariationStats(): Promise<VariationStats[]> {
+  const result = await pool.query(`
+    SELECT
+      pv.id AS variation_id,
+      pv.name AS variation_name,
+      COALESCE(SUM(CASE WHEN ve.event_type = 'view' THEN 1 ELSE 0 END), 0)::integer AS views,
+      COALESCE(SUM(CASE WHEN ve.event_type = 'click' THEN 1 ELSE 0 END), 0)::integer AS clicks,
+      CASE
+        WHEN COALESCE(SUM(CASE WHEN ve.event_type = 'view' THEN 1 ELSE 0 END), 0) = 0 THEN 0
+        ELSE ROUND(
+          COALESCE(SUM(CASE WHEN ve.event_type = 'click' THEN 1 ELSE 0 END), 0)::numeric /
+          COALESCE(SUM(CASE WHEN ve.event_type = 'view' THEN 1 ELSE 0 END), 1)::numeric * 100,
+          2
+        )
+      END AS ctr
+    FROM price_variations pv
+    LEFT JOIN variation_events ve ON ve.variation_id = pv.id
+    GROUP BY pv.id, pv.name
+    ORDER BY pv.created_at ASC
+  `);
+  return result.rows;
 }
 
 export default pool;
