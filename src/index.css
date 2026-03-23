@@ -1207,9 +1207,10 @@ img {
 /* ============================
    VTURB: HIDDEN PAGE MODE
    ============================ */
-/* When page_mode is 'hidden', the content below the video is hidden.
-   VTURB's "Show hidden content" feature removes display:none at the pitch moment. */
-.vturb-hidden {
+/* When page_mode is 'hidden', content below video is hidden via CSS.
+   In production: VTURB controls reveal via IDs (lf-reveal, lf-hero-cta).
+   In preview: this CSS class handles the hiding. */
+.page-content-hidden {
     display: none !important;
 }
 

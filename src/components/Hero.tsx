@@ -11,10 +11,14 @@ export default function Hero() {
 
   // Check for admin preview override
   const previewMode = new URLSearchParams(window.location.search).get('preview_mode');
-  const effectiveMode = previewMode === 'open' || previewMode === 'hidden'
+  const isPreview = previewMode === 'open' || previewMode === 'hidden';
+  const effectiveMode = isPreview
     ? previewMode
     : variation?.page_mode || 'open';
   const isHidden = effectiveMode === 'hidden';
+
+  // Only add VTURB ID when truly hidden (not preview)
+  const ctaRevealId = isHidden && !isPreview ? 'lf-hero-cta' : undefined;
 
   // When the video code is loaded, inject it and execute the scripts
   useEffect(() => {
@@ -67,7 +71,10 @@ export default function Hero() {
         </div>
 
         {/* CTA area — hidden in closed-page mode, revealed by VTURB */}
-        <div className={isHidden ? 'vturb-hidden' : ''} id="lf-hero-cta">
+        <div
+          className={isHidden ? 'page-content-hidden' : ''}
+          id={ctaRevealId}
+        >
           <CtaButton />
           <SecurityBadge />
           <div className="trust-badges">

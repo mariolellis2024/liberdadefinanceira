@@ -19,10 +19,17 @@ function LandingPageContent() {
 
   // Allow admins to preview a specific mode via ?preview_mode=open|hidden
   const previewMode = new URLSearchParams(window.location.search).get('preview_mode');
-  const effectiveMode = previewMode === 'open' || previewMode === 'hidden'
+  const isPreview = previewMode === 'open' || previewMode === 'hidden';
+
+  // Determine effective mode
+  const effectiveMode = isPreview
     ? previewMode
     : variation?.page_mode || 'open';
   const isHidden = effectiveMode === 'hidden';
+
+  // Only add VTURB IDs when truly hidden (not preview) — otherwise VTURB's JS will hide the content
+  // For preview_mode=hidden, use CSS class only (no VTURB IDs)
+  const revealId = isHidden && !isPreview ? 'lf-reveal' : undefined;
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -44,7 +51,10 @@ function LandingPageContent() {
   return (
     <>
       <Hero />
-      <div className={isHidden ? 'vturb-hidden' : ''} id="lf-reveal">
+      <div
+        className={isHidden ? 'page-content-hidden' : ''}
+        id={revealId}
+      >
         <Headline />
         <Problemas />
         <Resultados />
