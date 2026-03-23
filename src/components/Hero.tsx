@@ -45,7 +45,6 @@ export default function Hero() {
   return (
     <section id="hero" className="hero">
       <div className="container">
-        <span className="hero-tag">CURSO LIBERDADE FINANCEIRA</span>
         <h1>
           Organize seu dinheiro
           <br />
