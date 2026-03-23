@@ -1,3 +1,5 @@
+import { trackEvent } from '../hooks/useAnalytics';
+
 interface CtaButtonProps {
   href?: string;
 }
@@ -5,6 +7,7 @@ interface CtaButtonProps {
 export default function CtaButton({ href = '#preco' }: CtaButtonProps) {
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
+    trackEvent('click', 'CTA', href);
     const target = document.querySelector(href);
     if (target) {
       target.scrollIntoView({ behavior: 'smooth' });

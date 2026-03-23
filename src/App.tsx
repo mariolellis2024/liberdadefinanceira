@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Hero from './components/Hero';
 import Problemas from './components/Problemas';
 import Resultados from './components/Resultados';
@@ -8,8 +9,12 @@ import Instrutor from './components/Instrutor';
 import Preco from './components/Preco';
 import Faq from './components/Faq';
 import Footer from './components/Footer';
+import Admin from './pages/Admin';
+import { useAnalytics } from './hooks/useAnalytics';
 
-export default function App() {
+function LandingPage() {
+  useAnalytics();
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -39,5 +44,16 @@ export default function App() {
       <Faq />
       <Footer />
     </>
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/admin" element={<Admin />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
