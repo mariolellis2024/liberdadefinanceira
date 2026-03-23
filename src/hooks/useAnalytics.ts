@@ -1,55 +1,73 @@
 import { useEffect } from 'react';
 
-let analyticsLoaded = false;
+let gtmLoaded = false;
 
 export function useAnalytics() {
   useEffect(() => {
-    if (analyticsLoaded) return;
+    if (gtmLoaded) return;
 
-    async function loadAnalytics() {
+    async function loadGTM() {
       try {
         const res = await fetch('/api/analytics');
         const data = await res.json();
-        const gaId = data.ga_tracking_id;
+        const gtmId = data.gtm_id;
 
-        if (!gaId || gaId.trim() === '') return;
+        if (!gtmId || gtmId.trim() === '') return;
 
-        // Inject gtag.js script
+        // Initialize dataLayer
+        (window as any).dataLayer = (window as any).dataLayer || [];
+
+        // Inject GTM script
         const script = document.createElement('script');
-        script.async = true;
-        script.src = `https://www.googletagmanager.com/gtag/js?id=${gaId}`;
-        document.head.appendChild(script);
-
-        // Init gtag
-        const inlineScript = document.createElement('script');
-        inlineScript.textContent = `
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('js', new Date());
-          gtag('config', '${gaId}', {
-            page_path: window.location.pathname,
-            send_page_view: true
-          });
+        script.textContent = `
+          (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+          new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+          j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+          'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+          })(window,document,'script','dataLayer','${gtmId}');
         `;
-        document.head.appendChild(inlineScript);
+        document.head.insertBefore(script, document.head.firstChild);
 
-        analyticsLoaded = true;
-        console.log('✓ Google Analytics loaded:', gaId);
+        // Inject GTM noscript fallback in body
+        const noscript = document.createElement('noscript');
+        const iframe = document.createElement('iframe');
+        iframe.src = `https://www.googletagmanager.com/ns.html?id=${gtmId}`;
+        iframe.height = '0';
+        iframe.width = '0';
+        iframe.style.display = 'none';
+        iframe.style.visibility = 'hidden';
+        noscript.appendChild(iframe);
+        document.body.insertBefore(noscript, document.body.firstChild);
+
+        gtmLoaded = true;
+        console.log('✓ Google Tag Manager loaded:', gtmId);
       } catch {
         // Silently fail — analytics is optional
       }
     }
 
-    loadAnalytics();
+    loadGTM();
   }, []);
 }
 
-// Track custom events (CTA clicks, FAQ opens, etc.)
-export function trackEvent(action: string, category: string, label?: string) {
-  if (typeof window !== 'undefined' && (window as any).gtag) {
-    (window as any).gtag('event', action, {
+// Push events to the dataLayer — GTM will route them to GA, Meta Pixel, etc.
+export function trackEvent(action: string, category: string, label?: string, value?: number) {
+  if (typeof window !== 'undefined' && (window as any).dataLayer) {
+    (window as any).dataLayer.push({
+      event: action,
       event_category: category,
       event_label: label,
+      event_value: value,
+    });
+  }
+}
+
+// Track standard e-commerce/conversion events (InitiateCheckout, Purchase, etc.)
+export function trackConversion(eventName: string, data?: Record<string, any>) {
+  if (typeof window !== 'undefined' && (window as any).dataLayer) {
+    (window as any).dataLayer.push({
+      event: eventName,
+      ...data,
     });
   }
 }

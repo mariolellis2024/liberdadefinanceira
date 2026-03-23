@@ -31,8 +31,8 @@ export default function Admin() {
   const [loginError, setLoginError] = useState('');
   const [loginLoading, setLoginLoading] = useState(false);
 
-  // GA Settings
-  const [gaTrackingId, setGaTrackingId] = useState('');
+  // GTM Settings
+  const [gtmId, setGtmId] = useState('');
   const [settingsSaved, setSettingsSaved] = useState(false);
   const [settingsLoading, setSettingsLoading] = useState(false);
 
@@ -82,7 +82,7 @@ export default function Admin() {
   async function loadSettings() {
     const res = await fetch('/api/settings');
     const data = await res.json();
-    setGaTrackingId(data.ga_tracking_id || '');
+    setGtmId(data.gtm_id || '');
     setVturbVideoCode(data.vturb_video_code || '');
     setVturbSpeedCode(data.vturb_speed_code || '');
   }
@@ -123,7 +123,7 @@ export default function Admin() {
     setIsAuthenticated(false);
   };
 
-  // Save GA
+  // Save GTM
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     setSettingsLoading(true);
@@ -132,7 +132,7 @@ export default function Admin() {
       const res = await fetch('/api/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ga_tracking_id: gaTrackingId }),
+        body: JSON.stringify({ gtm_id: gtmId }),
       });
       if (res.ok) { setSettingsSaved(true); setTimeout(() => setSettingsSaved(false), 3000); }
     } catch {}
@@ -484,17 +484,17 @@ export default function Admin() {
               </form>
             </div>
 
-            {/* Google Analytics */}
+            {/* Google Tag Manager */}
             <div className="admin-card">
-              <h2>📊 Google Analytics</h2>
+              <h2>📦 Google Tag Manager</h2>
               <p className="card-description">
-                Cole o ID de rastreamento (ex: <code>G-XXXXXXXXXX</code>). Será injetado automaticamente em todas as páginas.
+                Cole o ID do GTM (ex: <code>GTM-XXXXXXX</code>). O GTM gerencia Google Analytics, Meta Pixel e todos os rastreamentos.
               </p>
               <form onSubmit={handleSaveSettings}>
                 <div className="form-group">
-                  <label htmlFor="gaId">Measurement ID</label>
-                  <input id="gaId" type="text" value={gaTrackingId}
-                    onChange={(e) => setGaTrackingId(e.target.value)} placeholder="G-XXXXXXXXXX" />
+                  <label htmlFor="gtmId">Container ID</label>
+                  <input id="gtmId" type="text" value={gtmId}
+                    onChange={(e) => setGtmId(e.target.value)} placeholder="GTM-XXXXXXX" />
                 </div>
                 <div className="form-actions">
                   <button type="submit" className="btn-admin-primary" disabled={settingsLoading} style={{ width: 'auto' }}>

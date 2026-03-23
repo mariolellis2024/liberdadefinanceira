@@ -1,4 +1,4 @@
-import { trackEvent } from '../hooks/useAnalytics';
+import { trackEvent, trackConversion } from '../hooks/useAnalytics';
 import { useVariation } from '../hooks/useVariation';
 
 interface CtaButtonProps {
@@ -11,10 +11,11 @@ export default function CtaButton({ href = '#preco' }: CtaButtonProps) {
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
 
-    // Track CTA click with variation info
     const variationLabel = variation
       ? `${variation.name} (ID: ${variation.id}) - ${variation.price_avista}`
       : 'sem-variacao';
+
+    // Track CTA click via dataLayer (GTM → GA + Meta Pixel)
     trackEvent('cta_click', 'CTA', variationLabel);
 
     // Record click server-side for admin analytics
@@ -26,10 +27,34 @@ export default function CtaButton({ href = '#preco' }: CtaButtonProps) {
       }).catch(() => {});
     }
 
-    // If variation has a link, go to it; otherwise smooth scroll
+    // If variation has a link, fire InitiateCheckout + redirect
     if (variation?.link) {
-      trackEvent('checkout_redirect', 'Conversion', variationLabel);
-      window.open(variation.link, '_blank');
+      // InitiateCheckout — Meta Pixel standard event (via GTM dataLayer)
+      trackConversion('InitiateCheckout', {
+        content_name: variation.name,
+        content_category: 'Curso Liberdade Financeira',
+        currency: 'BRL',
+        value: parseFloat(variation.price_avista.replace(/[^\d,]/g, '').replace(',', '.')),
+        variation_id: variation.id,
+        variation_name: variation.name,
+      });
+
+      // GA4 begin_checkout event (via GTM dataLayer)
+      trackConversion('begin_checkout', {
+        currency: 'BRL',
+        value: parseFloat(variation.price_avista.replace(/[^\d,]/g, '').replace(',', '.')),
+        items: [{
+          item_name: 'Curso Liberdade Financeira',
+          item_variant: variation.name,
+          price: parseFloat(variation.price_avista.replace(/[^\d,]/g, '').replace(',', '.')),
+          quantity: 1,
+        }],
+      });
+
+      // Small delay to ensure events fire before redirect
+      setTimeout(() => {
+        window.open(variation.link, '_blank');
+      }, 150);
     } else {
       const target = document.querySelector(href);
       if (target) {

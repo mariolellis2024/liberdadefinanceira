@@ -32,13 +32,13 @@ app.use(cookieParser());
 // Login
 app.post('/api/login', login);
 
-// GA tracking ID — público
+// GTM ID — público
 app.get('/api/analytics', async (_req, res) => {
   try {
-    const gaId = await getSetting('ga_tracking_id');
-    res.json({ ga_tracking_id: gaId });
+    const gtmId = await getSetting('gtm_id');
+    res.json({ gtm_id: gtmId });
   } catch {
-    res.json({ ga_tracking_id: '' });
+    res.json({ gtm_id: '' });
   }
 });
 
@@ -141,21 +141,21 @@ app.post('/api/password', authMiddleware, changePassword);
 // Buscar configurações (protegido)
 app.get('/api/settings', authMiddleware, async (_req, res) => {
   try {
-    const gaId = await getSetting('ga_tracking_id');
+    const gtmId = await getSetting('gtm_id');
     const videoCode = await getSetting('vturb_video_code');
     const speedCode = await getSetting('vturb_speed_code');
-    res.json({ ga_tracking_id: gaId, vturb_video_code: videoCode, vturb_speed_code: speedCode });
+    res.json({ gtm_id: gtmId, vturb_video_code: videoCode, vturb_speed_code: speedCode });
   } catch {
     res.status(500).json({ error: 'Erro ao buscar configurações' });
   }
 });
 
-// Salvar GA tracking ID (protegido)
+// Salvar configurações (protegido)
 app.post('/api/settings', authMiddleware, async (req, res) => {
   try {
-    const { ga_tracking_id, vturb_video_code } = req.body;
-    if (ga_tracking_id !== undefined) {
-      await updateSetting('ga_tracking_id', ga_tracking_id);
+    const { gtm_id, vturb_video_code } = req.body;
+    if (gtm_id !== undefined) {
+      await updateSetting('gtm_id', gtm_id);
     }
     if (vturb_video_code !== undefined) {
       await updateSetting('vturb_video_code', vturb_video_code);
