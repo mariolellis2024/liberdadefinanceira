@@ -22,16 +22,7 @@ function LandingPageContent() {
     if (variationLoading) return;
 
     // Small delay to let React render the DOM before revealing
-    const timer = setTimeout(() => {
-      const loader = document.getElementById('page-loader');
-      const root = document.getElementById('root');
-      if (loader) loader.classList.add('loaded');
-      if (root) root.classList.add('ready');
-
-      // Remove loader from DOM after transition
-      setTimeout(() => loader?.remove(), 600);
-    }, 100);
-
+    const timer = setTimeout(() => dismissLoader(), 100);
     return () => clearTimeout(timer);
   }, [variationLoading]);
 
@@ -98,6 +89,14 @@ function LandingPage() {
 }
 
 export default function App() {
+  // Dismiss the page loader for non-landing routes (admin, etc.)
+  useEffect(() => {
+    // If we're not on the landing page, dismiss loader immediately
+    if (window.location.pathname !== '/') {
+      dismissLoader();
+    }
+  }, []);
+
   return (
     <BrowserRouter>
       <Routes>
@@ -106,4 +105,12 @@ export default function App() {
       </Routes>
     </BrowserRouter>
   );
+}
+
+function dismissLoader() {
+  const loader = document.getElementById('page-loader');
+  const root = document.getElementById('root');
+  if (loader) loader.classList.add('loaded');
+  if (root) root.classList.add('ready');
+  setTimeout(() => loader?.remove(), 600);
 }
