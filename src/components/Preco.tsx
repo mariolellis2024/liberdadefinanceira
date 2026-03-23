@@ -57,8 +57,10 @@ export default function Preco() {
             ))}
           </ul>
 
-          <CtaButton href="#" />
-          <SecurityBadge />
+          <div className="preco-cta-area">
+            <CtaButton href="#" />
+            <SecurityBadge />
+          </div>
 
           <div className="garantia-box">
             <div className="garantia-icon">
@@ -73,11 +75,6 @@ export default function Preco() {
             </p>
           </div>
         </div>
-
-        <p className="preco-nota">
-          A decisão de organizar seu dinheiro é mais importante que o valor deste
-          investimento.
-        </p>
       </div>
     </section>
   );
