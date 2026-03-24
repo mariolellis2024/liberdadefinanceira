@@ -72,7 +72,7 @@ export default function Hero() {
 
         {/* CTA area — hidden in closed-page mode, revealed by VTURB */}
         <div
-          className={isHidden ? 'page-content-hidden' : ''}
+          className={isHidden && isPreview ? 'page-content-hidden' : ''}
           id={ctaRevealId}
         >
           <CtaButton />

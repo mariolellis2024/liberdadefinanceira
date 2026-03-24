@@ -61,7 +61,7 @@ function LandingPageContent() {
     <>
       <Hero />
       <div
-        className={isHidden ? 'page-content-hidden' : ''}
+        className={isHidden && isPreview ? 'page-content-hidden' : ''}
         id={revealId}
       >
         <Headline />
