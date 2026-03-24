@@ -46,6 +46,24 @@ export function VariationProvider({ children }: { children: React.ReactNode }) {
 
           // Track which variation was assigned
           trackEvent('variation_assigned', 'AB_Test', `${data.variation.name} (ID: ${data.variation.id})`);
+
+          // --- Add SRC parameter to the URL ---
+          // Extract integer price from price_avista (e.g. "R$ 197,00" → "197")
+          const priceInt = Math.floor(
+            parseFloat(data.variation.price_avista.replace(/[^\d,]/g, '').replace(',', '.'))
+          );
+
+          // Determine effective page mode (preview_mode overrides variation)
+          const params = new URLSearchParams(window.location.search);
+          const previewMode = params.get('preview_mode');
+          const effectiveMode = (previewMode === 'open' || previewMode === 'hidden')
+            ? previewMode
+            : data.variation.page_mode || 'open';
+          const pageLabel = effectiveMode === 'hidden' ? 'FECHADA' : 'ABERTA';
+
+          // Compose and set SRC (e.g. "197_ABERTA")
+          params.set('src', `${priceInt}_${pageLabel}`);
+          window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}${window.location.hash}`);
         }
       } catch {
         // silently fail

@@ -53,7 +53,17 @@ export default function CtaButton({ href = '#preco' }: CtaButtonProps) {
 
       // Small delay to ensure events fire before redirect
       setTimeout(() => {
-        window.open(variation.link, '_blank');
+        // Append all current URL params (UTMs + src) to the checkout link
+        const currentParams = new URLSearchParams(window.location.search);
+        const checkoutUrl = new URL(variation.link);
+        currentParams.forEach((value, key) => {
+          // Don't override params that already exist in the checkout link
+          // Skip preview_mode as it's internal only
+          if (key !== 'preview_mode' && !checkoutUrl.searchParams.has(key)) {
+            checkoutUrl.searchParams.set(key, value);
+          }
+        });
+        window.open(checkoutUrl.toString(), '_blank');
       }, 150);
     } else {
       const target = document.querySelector(href);
