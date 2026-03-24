@@ -61,8 +61,8 @@ export function VariationProvider({ children }: { children: React.ReactNode }) {
             : data.variation.page_mode || 'open';
           const pageLabel = effectiveMode === 'hidden' ? 'FECHADA' : 'ABERTA';
 
-          // Compose and set SRC (e.g. "197_ABERTA")
-          params.set('src', `${priceInt}_${pageLabel}`);
+          // Compose and set SCK (e.g. "197_ABERTA")
+          params.set('sck', `${priceInt}_${pageLabel}`);
           window.history.replaceState({}, '', `${window.location.pathname}?${params.toString()}${window.location.hash}`);
         }
       } catch {
