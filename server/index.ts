@@ -243,9 +243,11 @@ app.delete('/api/variations/:id', authMiddleware, async (req, res) => {
 });
 
 // Estatísticas das variações (protegido)
-app.get('/api/variations/stats', authMiddleware, async (_req, res) => {
+app.get('/api/variations/stats', authMiddleware, async (req, res) => {
   try {
-    const stats = await getVariationStats();
+    const startDate = req.query.start_date as string | undefined;
+    const endDate = req.query.end_date as string | undefined;
+    const stats = await getVariationStats(startDate, endDate);
     res.json({ stats });
   } catch {
     res.status(500).json({ error: 'Erro ao buscar estatísticas' });

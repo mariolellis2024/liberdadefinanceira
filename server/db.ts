@@ -228,7 +228,21 @@ export async function recordEvent(
   );
 }
 
-export async function getVariationStats(): Promise<VariationStats[]> {
+export async function getVariationStats(startDate?: string, endDate?: string): Promise<VariationStats[]> {
+  const params: string[] = [];
+  let dateFilter = '';
+
+  if (startDate && endDate) {
+    params.push(startDate, endDate);
+    dateFilter = `AND ve.created_at >= $1::date AND ve.created_at < ($2::date + INTERVAL '1 day')`;
+  } else if (startDate) {
+    params.push(startDate);
+    dateFilter = `AND ve.created_at >= $1::date`;
+  } else if (endDate) {
+    params.push(endDate);
+    dateFilter = `AND ve.created_at < ($1::date + INTERVAL '1 day')`;
+  }
+
   const result = await pool.query(`
     SELECT
       pv.id AS variation_id,
@@ -245,10 +259,10 @@ export async function getVariationStats(): Promise<VariationStats[]> {
         )
       END AS ctr
     FROM price_variations pv
-    LEFT JOIN variation_events ve ON ve.variation_id = pv.id
+    LEFT JOIN variation_events ve ON ve.variation_id = pv.id ${dateFilter}
     GROUP BY pv.id, pv.name, pv.page_mode
     ORDER BY pv.created_at ASC
-  `);
+  `, params);
   return result.rows;
 }
 

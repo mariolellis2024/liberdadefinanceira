@@ -22,6 +22,7 @@ interface VariationStat {
 }
 
 type Tab = 'dashboard' | 'config' | 'preview';
+type DateFilterType = 'all' | '7days' | '30days' | 'custom';
 
 export default function Admin() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -67,6 +68,11 @@ export default function Admin() {
   // Stats
   const [stats, setStats] = useState<VariationStat[]>([]);
 
+  // Date Filter
+  const [dateFilter, setDateFilter] = useState<DateFilterType>('all');
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
+
   // Auth check
   useEffect(() => {
     fetch('/api/auth/check')
@@ -96,8 +102,39 @@ export default function Admin() {
     setVariations(data.variations || []);
   }
 
-  async function loadStats() {
-    const res = await fetch('/api/variations/stats');
+  function getDateRange(filter: DateFilterType): { start?: string; end?: string } {
+    const today = new Date();
+    const formatDate = (d: Date) => d.toISOString().split('T')[0];
+
+    switch (filter) {
+      case '7days': {
+        const start = new Date(today);
+        start.setDate(start.getDate() - 6);
+        return { start: formatDate(start), end: formatDate(today) };
+      }
+      case '30days': {
+        const start = new Date(today);
+        start.setDate(start.getDate() - 29);
+        return { start: formatDate(start), end: formatDate(today) };
+      }
+      case 'custom':
+        return {
+          start: customStartDate || undefined,
+          end: customEndDate || undefined,
+        };
+      default:
+        return {};
+    }
+  }
+
+  async function loadStats(filterOverride?: DateFilterType) {
+    const filter = filterOverride ?? dateFilter;
+    const { start, end } = getDateRange(filter);
+    const params = new URLSearchParams();
+    if (start) params.set('start_date', start);
+    if (end) params.set('end_date', end);
+    const qs = params.toString();
+    const res = await fetch(`/api/variations/stats${qs ? `?${qs}` : ''}`);
     const data = await res.json();
     setStats(data.stats || []);
   }
@@ -313,6 +350,62 @@ export default function Admin() {
       <div className="admin-container">
         {activeTab === 'dashboard' && (
           <>
+            {/* Date Filter Bar */}
+            <div className="date-filter-bar">
+              <div className="date-filter-presets">
+                <button
+                  className={`date-filter-btn ${dateFilter === 'all' ? 'active' : ''}`}
+                  onClick={() => { setDateFilter('all'); loadStats('all'); }}
+                >
+                  Todo Período
+                </button>
+                <button
+                  className={`date-filter-btn ${dateFilter === '7days' ? 'active' : ''}`}
+                  onClick={() => { setDateFilter('7days'); loadStats('7days'); }}
+                >
+                  Últimos 7 dias
+                </button>
+                <button
+                  className={`date-filter-btn ${dateFilter === '30days' ? 'active' : ''}`}
+                  onClick={() => { setDateFilter('30days'); loadStats('30days'); }}
+                >
+                  Último mês
+                </button>
+                <button
+                  className={`date-filter-btn ${dateFilter === 'custom' ? 'active' : ''}`}
+                  onClick={() => { setDateFilter('custom'); }}
+                >
+                  📅 Personalizado
+                </button>
+              </div>
+              {dateFilter === 'custom' && (
+                <div className="date-filter-custom">
+                  <div className="date-input-group">
+                    <label>De</label>
+                    <input
+                      type="date"
+                      value={customStartDate}
+                      onChange={(e) => setCustomStartDate(e.target.value)}
+                    />
+                  </div>
+                  <div className="date-input-group">
+                    <label>Até</label>
+                    <input
+                      type="date"
+                      value={customEndDate}
+                      onChange={(e) => setCustomEndDate(e.target.value)}
+                    />
+                  </div>
+                  <button
+                    className="btn-admin-small btn-apply-filter"
+                    onClick={() => loadStats('custom')}
+                  >
+                    Aplicar
+                  </button>
+                </div>
+              )}
+            </div>
+
             {/* Summary Cards */}
             <div className="stats-summary">
               <div className="stat-card">
@@ -337,7 +430,7 @@ export default function Admin() {
             <div className="admin-card">
               <div className="card-header-row">
                 <h2>📈 Performance por Variação</h2>
-                <button className="btn-admin-small" onClick={loadStats}>↻ Atualizar</button>
+                <button className="btn-admin-small" onClick={() => loadStats()}>↻ Atualizar</button>
               </div>
 
               {stats.length === 0 ? (
