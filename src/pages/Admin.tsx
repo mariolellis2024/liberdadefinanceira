@@ -22,7 +22,7 @@ interface VariationStat {
 }
 
 type Tab = 'dashboard' | 'config' | 'preview';
-type DateFilterType = 'all' | '7days' | '30days' | 'custom';
+type DateFilterType = 'all' | 'today' | '7days' | '30days' | 'custom';
 
 export default function Admin() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -107,6 +107,9 @@ export default function Admin() {
     const formatDate = (d: Date) => d.toISOString().split('T')[0];
 
     switch (filter) {
+      case 'today': {
+        return { start: formatDate(today), end: formatDate(today) };
+      }
       case '7days': {
         const start = new Date(today);
         start.setDate(start.getDate() - 6);
@@ -358,6 +361,12 @@ export default function Admin() {
                   onClick={() => { setDateFilter('all'); loadStats('all'); }}
                 >
                   Todo Período
+                </button>
+                <button
+                  className={`date-filter-btn ${dateFilter === 'today' ? 'active' : ''}`}
+                  onClick={() => { setDateFilter('today'); loadStats('today'); }}
+                >
+                  Hoje
                 </button>
                 <button
                   className={`date-filter-btn ${dateFilter === '7days' ? 'active' : ''}`}
